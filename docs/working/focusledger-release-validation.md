@@ -2,6 +2,12 @@
 
 验证日期：2026-10-14（Asia/Shanghai）。目标平台：Windows x64，内部版本 `1.9.10`。功能冻结后的本轮仅修改文档位置、引用及验证报告，未修改应用源码、测试、评分定义、依赖或锁文件。当前结论为 **BLOCKED：尚不满足正式发布验收**；以下本轮状态优先于历史记录。
 
+## GitHub 源码发布附录（2026-10-16）
+
+本附录记录后续的源码基线，不覆盖上面的冻结验证结论：源码副本已初始化本地 Git 仓库，默认分支为 `main`，首次提交为 `36e1d61`（`feat: release FocusLedger MVP`）。提交前复查了 `.gitignore`、暂存区路径和文件名，未纳入 `node_modules`、`dist`、Rust `target`、`artifacts`、本地 SQLite、环境变量文件、日志、安装包或可识别的真实活动数据；通用 SQLite、环境变量和构建产物规则已加入忽略配置。文档治理、TypeScript 检查、Vite 生产构建和 `cargo check --locked` 均通过。
+
+GitHub CLI 未安装，Git Credential Manager 未返回 `github.com` 凭据，环境变量中没有 GitHub Token；直接访问 GitHub API 也被当前网络策略拒绝。因此尚未创建或确认远程仓库、尚未配置 `origin`、尚未推送。该门禁保持 **BLOCKED**，不能据此声称 GitHub 仓库已发布。
+
 ## 冻结后的工程复核
 
 上一阶段未完成项为 Git 文档门禁、cargo-audit 依赖审计、干净机器安装/卸载、ARM64 和签名证据。审查上游发布政策后，还需区分本地 x64 产物与其双架构、tag、签名、资产校验及 attestation 发布链；本轮没有执行外部发布。
