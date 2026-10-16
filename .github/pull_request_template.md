@@ -1,0 +1,118 @@
+## Purpose
+
+<!--
+Explain the user problem, bug, or maintenance goal.
+Reference related issues with `Refs #123`.
+Do not use `Closes`, `Fixes`, or `Resolves` unless the maintainer explicitly requests an issue state change.
+-->
+
+Refs #
+
+## Accepted Scope
+
+<!--
+Link the accepted issue, Project item, or maintainer-approved scope.
+The automated intake gate checks this section before normal verification runs.
+-->
+
+- Linked issue / Project item / maintainer approval:
+
+## Changes
+
+<!-- Describe the important behavior changes. Keep the pull request focused on one coherent problem. -->
+
+-
+
+## Scope Boundary
+
+<!--
+Scope means: one accepted problem + necessary code changes + validation.
+Mention unrelated follow-up work separately.
+-->
+
+- In scope:
+- Out of scope:
+
+## Owner Check
+
+<!--
+Explain why the changed files belong under these owners.
+Examples: features/settings, platform/persistence, engine/export, data/repositories.
+-->
+
+- Frontend owner:
+- Rust owner:
+- Why this placement fits:
+
+## Risk Review
+
+<!--
+Complete the relevant items. Use `N/A` when an area is not affected.
+Call out changes to tracking, local data, privacy, security, migrations, backup, restore, cleanup, or external interfaces explicitly.
+-->
+
+- Tracking correctness:
+- Local data safety:
+- Privacy or security:
+- Compatibility and migration:
+- Failure and recovery behavior:
+
+## UI Review
+
+<!-- For visible UI changes, attach screenshots through GitHub user-attachments or another repository-external HTTPS host. Write N/A when there is no visible UI impact. -->
+
+- [ ] No UI changes
+- [ ] UI follows Quiet Pro
+- [ ] Screenshots attached externally
+- Affected states:
+- Keyboard and focus:
+- Repeatable test or existing owner test:
+
+## Validation
+
+<!--
+Check the commands that were run. Select required validation under docs/engineering-quality.md §5 and CONTRIBUTING.md §6.
+Documentation-only changes still require checks for changed governance, operational claims, or other affected risks.
+Follow docs/versioning-and-release-policy.md for version, tag, updater, packaging, and formal release acceptance.
+Focused tests must match the changed risk area; unrelated tests do not satisfy the intake gate.
+-->
+
+- [ ] `pnpm run check:docs` for documentation-only changes
+- [ ] `pnpm run check:docs:self-test` for documentation-governance or validation-policy changes
+- [ ] `pnpm run check` for changes that are not documentation-only
+- [ ] `pnpm run check:full` when required by engineering-quality.md §5
+- [ ] `pnpm run test:tauri-runtime-smoke` for IPC registration, capability, plugin SQL, or desktop-runtime changes
+- [ ] `pnpm run perf:stable` for performance-sensitive read-model, SQLite-query, or navigation changes
+- [ ] `pnpm run release:validate-changelog` for release, changelog, or updater changes
+- [ ] `pnpm run release:check` for formal release preparation
+- [ ] Added or updated focused tests for the changed behavior
+
+Additional validation:
+
+-
+
+## Screenshots
+
+<!--
+Add before/after screenshots for visible UI changes.
+Include relevant empty, disabled, error, narrow-layout, light-theme, or dark-theme states when applicable.
+Use GitHub user-attachments or another repository-external HTTPS host. Do not commit review screenshots, GIFs, videos, or an evidence-media directory to this repository; repository blob/raw links do not count as evidence.
+Write `N/A` if the change has no visible UI impact.
+-->
+
+## Contributor Checklist
+
+- [ ] I read the relevant active project documents under `docs/`.
+- [ ] This pull request is linked to the Issue or Project item where its scope was agreed, or to an explicit maintainer-approved scope.
+- [ ] This pull request solves one coherent problem and excludes unrelated cleanup.
+- [ ] Every changed file is necessary for the accepted problem.
+- [ ] The commits are reviewable; oversized changes were split coherently by behavior, owner, or independently verifiable stage.
+- [ ] New behavior is placed under the correct owner and does not bypass architecture boundaries.
+- [ ] I did not add standalone CSS or hardcoded visual styles outside the design system.
+- [ ] I did not weaken package validation scripts or change quality gate scripts, CI workflows, bundle budgets, or hotspot budgets unless the maintainer explicitly requested that maintenance work.
+- [ ] User-facing copy is owned by the relevant copy domain, not hardcoded inline in JSX.
+- [ ] Risk-bearing behavior has focused tests that match the changed risk area.
+- [ ] I did not commit screenshots, GIFs, videos, or other review-evidence media to the repository.
+- [ ] I rebased onto the latest `main`, or confirmed that the branch is compatible with it.
+- [ ] I documented security behavior for any local or network interface.
+- [ ] I used `Refs #N` instead of an issue-closing keyword unless explicitly requested.

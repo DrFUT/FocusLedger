@@ -1,0 +1,47 @@
+import { parseCommandError } from "../../../platform/persistence/commandError.ts";
+import {
+  addTimerLap,
+  cancelReminder,
+  createActivityReminderRule,
+  createReminder,
+  disableActivityReminderRule,
+  dismissToolAlert,
+  getToolAlerts,
+  getToolsSnapshot,
+  onToolAlert,
+  onToolsRuntimeChanged,
+  pausePomodoro,
+  pauseTimer,
+  resetPomodoro,
+  resetTimer,
+  resumePomodoro,
+  resumeTimer,
+  skipPomodoroPhase,
+  startPomodoro,
+  startTimer,
+} from "../../../platform/runtime/toolsRuntimeGateway.ts";
+
+export const ToolsRuntimeService = {
+  isStateRefreshPendingError(error: unknown): boolean {
+    return parseCommandError(error).code === "TOOLS_STATE_REFRESH_PENDING";
+  },
+  addTimerLap,
+  cancelReminder,
+  createActivityReminderRule,
+  createReminder,
+  disableActivityReminderRule,
+  dismissToolAlert,
+  getToolAlerts,
+  getToolsSnapshot,
+  onToolAlert,
+  onToolsRuntimeChanged,
+  pausePomodoro,
+  pauseTimer,
+  resetPomodoro,
+  resetTimer,
+  resumePomodoro,
+  resumeTimer,
+  skipPomodoroPhase,
+  startPomodoro,
+  startTimer,
+};

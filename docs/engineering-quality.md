@@ -1,0 +1,251 @@
+# 工程质量
+
+## 1. 文档定位
+
+本文是 `Patina` 的长期工程质量母文档。
+
+它回答的是长期稳定规则，而不是某一轮专项执行计划：
+
+- 工程质量默认包含哪些维度
+- 这些维度之间如何排序、取舍与协作
+- 哪些优化是鼓励的，哪些“优化”其实会伤害仓库
+- 默认验证门槛与风险追加验证是什么
+- 哪些层和边界需要长期高警惕
+
+如果临时执行单、阶段专项文档或局部实现习惯与本文冲突，以本文与 [`architecture.md`](./architecture.md) 为准。
+
+---
+
+## 2. 三个核心维度
+
+工程质量包括可读、可改、可测且 owner 清晰的代码；启动、高频读写及长期资源成本可解释的性能；以及 tracking、数据恢复、运行时和发布链可信的可靠性与验证。三个维度互不替代。
+
+## 3. 默认优先级
+
+默认按可靠性与验证、代码质量、性能排序：本地时间记录必须可信。高风险结构整理需要验证保护，高风险性能优化需要测量；不能以整洁或速度为由损害 owner、tracking、恢复、升级或发布边界。
+
+## 4. 长期结构口径
+
+[架构文档](./architecture.md) 拥有层级、薄入口、兼容壳和唯一实现规则。结构优化应降低回归风险、修复成本和边界回流。
+
+普通函数、类型、模块、service、command 按领域语义命名，不用 `V2/V3`、`New/Next/Latest` 表示改过一次。迁移调用方并收口旧实现；`Legacy/Compat` 仅用于有真实理由和退出条件的薄兼容边界。SemVer、tag、协议、备份格式、schema 和 migration 编号仍是合法版本事实。
+
+## 4.5 外部 PR 准入门禁
+
+外部 PR 先判断是否降低维护者安全落地一个已接受问题的成本，再进入逐行 review。完整贡献者政策由 [`../CONTRIBUTING.md`](../CONTRIBUTING.md) 拥有，PR 模板负责采集，`scripts/pr-intake-policy.ts` 与 `scripts/check-pr-intake.ts` 负责执行，`tests/prIntakeGate.test.ts` 负责门禁反例；本文只拥有风险模型。
+
+可进入人工 review 的最小范围是“一个已接受问题 + 必需改动 + 风险匹配验证”，并同时满足：
+
+- 已接受的 Issue、Project item 或维护者明确接受的 scope 可审计；
+- Scope Boundary、Owner Check、Risk Review 和 Validation 完整；
+- 文件和用户可见行为都属于已声明范围，代码位于真实 owner；
+- UI 符合 Quiet Pro，通过 GitHub user-attachments 或其他仓库外 HTTPS 地址提供截图，并有可重复测试；
+- tracking、SQLite、备份、恢复、清理、导出、migration、持久化、截屏采集和本机/网络接口等风险有对应专项测试。
+
+以下门禁失败时停止逐行 review：无接受范围、无关改动、错误 owner、主要 UI 需重做、样式或用户文案绕过 owner、风险无测试、功能 PR 修改或削弱质量门禁、编码污染、仓库内审查截图/GIF/视频/evidence-media、手工维护内容超过 1000 行或 25 个文件而未按 owner/行为拆分，或维护者需要重写主要实现。结果分类为 `Mergeable`、`Needs Author Changes`、`Not Accepted` 或 `Declined`。
+
+门禁是自动、label-free 且不可由 PR 正文或作者声明绕过。它使用可信 base 与 PR head 的三点 diff，不执行贡献者修改后的门禁脚本或 package scripts；普通本地 `pnpm run check` 不能代替 PR intake。Draft PR 可暂不运行，ready for review 后必须全部满足。平台要求的首次 Actions 批准只允许 workflow 启动，不表示 scope 获批。
+
+测试必须真正覆盖命中的风险域并能被默认测试图或 Cargo module tree 到达。未注册测试、无关 smoke、只删除断言或只写“已测试”都不是正向证据。capability、permission set 或 application command manifest 变化还必须提供已登记的真实 Tauri main/Widget denial matrix。
+
+## 4.6 Prose 质量
+
+工程 prose 必须服务长期理解和可执行判断，而不是保留会话过程。文档、注释、review、changelog 和贡献者说明默认遵守：
+
+- 保留 actor、触发条件、义务、禁止、例外、失败行为、原因和验证证据；
+- 不把 `must` 弱化成 `should`，不把 scoped default 改写成绝对规则；
+- Public JSDoc 只记录调用者无法从签名直接得知的返回、失败、所有权、时序、副作用和兼容性契约；
+- 内部注释只解释非局部不变量、平台限制、安全理由或反直觉决策，不逐行复述实现；
+- 诊断信息必须指出失败对象、可操作原因和下一步，不使用无上下文的“失败”或“出错”；
+- 删除代码逐行复述、实现过程日记、review 辩解、无证据质量声明和 chain-of-thought 残留；
+- 用户可见产品文案和翻译继续服从 [`localization.md`](./localization.md)，不能由通用 prose 整理绕过消息契约；
+- 长期事实更新真实 owner；working note 与 archive 不能成为第二来源。
+
+本地 Agent 工作流可以辅助 prose 与文档生命周期工作，但本文与 `AGENTS.md` 必须独立提供完整规则。`.agents/` 和 `skills-lock.json` 不属于仓库质量门禁输入，其具体工具名称、清单和路由不得复制到长期文档。
+
+---
+
+## 5. 默认验证门槛
+
+本地验证按实际改动选择：纯文档运行 `pnpm run check:docs`，并核对修改部分的事实、UTF-8、链接和义务；文档治理或验证政策变化追加 `pnpm run check:docs:self-test` 及受影响规则的正反场景。检查器、模板或操作说明变化还需验证其真实使用路径，不能仅因文件是 Markdown 就免除对应风险。纯文档不默认运行应用构建、browser 或 Rust 全套验证。前端行为改动仍以 `pnpm run check` 为默认入口；Rust、架构实现边界、依赖或发布级复核使用 `pnpm run check:full`；改变 tracking 正确性、SQLite 数据行为或桌面 runtime 契约也使用该完整门槛。纯展示的前端修改仍按前端行为路由，不能仅因页面展示追踪数据就推定改变 tracking 契约。`package.json` 是当前命令组合、顺序与叶子测试的唯一 owner，长期 prose 不复制其执行图。门禁不得从顶层入口静默移除既有检查、测试、coverage include 或阈值。
+
+`check:full` 必须在默认门槛之外验证 Rust 边界、格式、编译、测试、clippy 与依赖安全。依赖审计只允许经 Windows target 依赖树证明不可达的精确 advisory；受控离线模式仍须运行本地快照和例外可达性校验，但不能替代发布 CI 的联网新鲜度。
+
+Node 与 Rust 工具链版本分别由根 `.node-version` 与 `rust-toolchain.toml` 拥有；pnpm 版本由 `package.json#packageManager` 拥有。CI 读取这些来源，`engines` 保持受测试的精确镜像。安装布局、依赖构建脚本许可和 override 由 `pnpm-workspace.yaml` 拥有；冻结安装消费唯一 JS 锁文件 `pnpm-lock.yaml`，仓库仍使用 npm registry。第三方 GitHub Actions 固定到完整 commit SHA，并保留对应主版本注释；可移动 tag 不能成为长期执行引用。
+
+JS 离线审计只接受最近 24 小时内成功联网审计生成、且 SHA-256 与当前 pnpm 锁文件一致的本地报告。报告缺失、过期、损坏或锁文件变化均失败；Rust 离线快照及例外可达性校验继续执行。
+
+风险追加验证、当前命令名与其组合关系由下面的风险路由和 `package.json` 共同决定，不能用文档中的旧叶子清单覆盖机器事实。
+
+验证证据绑定受影响的输入、环境和风险。同一任务中相关输入未变化、证据仍有效时，不因接下来提交、推送或补写执行记录而重复检查；代码、配置、依赖、base 或验证规则变化后重新判断受影响范围，只重跑失效的证据。风险匹配不能用来跳过本节要求的默认门槛。无法运行的检查应明确原因、残余风险和验证责任，不得记为通过。
+
+### 5.1 测试分层与稳定性治理
+
+测试长期按六层管理：unit/model、integration/contract、structural/SSR、browser、desktop runtime、performance/release。同一功能可以出现在多层，但每层必须保护不同事实：低层覆盖状态组合和不变量，browser 覆盖真实 DOM 与交互，desktop runtime 覆盖 Tauri、WebView2、IPC、plugin、进程和落盘边界，performance/release 负责预算与产物，不互相冒充。
+
+`pnpm test` 是全部快速确定性 TypeScript 测试的稳定入口。coverage 风险域和其余快速测试是互斥分区，并集必须等于全部快速入口。真实浏览器 smoke 进入默认 `check`，Tauri runtime smoke 保持独立 CI job 和风险追加入口。普通确定性顶层测试在一次默认门禁中只能执行一次；coverage、mutation 和 runtime 的特殊语义不能作为宽泛重复豁免。
+
+默认 browser smoke 使用 headless 模式。Tauri runtime smoke 保留真实应用、窗口生命周期、IPC、权限和数据库验证，可在本机或 CI 按风险需要运行，无需额外的桌面操作确认或启动开关。计时专项不引入反复切换真实应用与浏览器前台、播放媒体或依赖真实活动会话的退出重启自动化测试；计时逻辑、数据边界和恢复规则由确定性测试覆盖，实际 Windows 交互由人工验收补充。
+
+风险域 coverage 门禁只代表其 include 清单。全仓审查使用 `package.json` 中的 `test:coverage:full:frontend` 和 `test:coverage:full:rust` 专项入口，报告保存在忽略目录 `artifacts/coverage-full/`。前者复用快速测试与浏览器场景，按原始源码行合并观察结果，未执行运行模块保留零覆盖；后者使用锁定 Rust 工具链的 `llvm-tools-preview`，合并库测试与真实桌面进程的 instrumentation 计数。报告绑定基线提交及源码字节摘要，列明生成、类型、测试、无映射和采样失败项。前端与 Rust 不合成一个覆盖率，x64 执行不代表 ARM64；工具和测试基础设施以独立行为验证说明。全仓采集不替代风险域阈值，也不使用受 instrumentation 影响的耗时作性能证据。
+
+新增测试必须能说明真实 owner、所属层级和独有失败模式。顶层 `tests/*.test.ts` 必须有且只有一个叶子脚本 owner，并能从快速、browser、runtime 或明确专项入口到达。删除测试前必须证明已有更稳定的替代保护，或证明它没有独有失败模式；测试数量和 coverage 百分比本身都不能作为删除理由。
+
+测试不得通过直接读取 `src/**` 或 `src-tauri/src/**` 文件文本、搜索实现片段或统计源码字符串来冒充行为覆盖。跨语言生成/导出字段契约是唯一允许的窄例外，例外必须精确到测试文件和源文件，并同时登记 owner、保留理由与退出条件；静态架构、命名和 source-shape 事实应由专用检查器及其自测负责。
+
+测试同步遵守以下规则：
+
+- 禁止失败后自动重跑整项测试来掩盖 flaky behavior。
+- 等待状态变化必须使用有界条件轮询、事件、显式闸门或可观察 runtime 状态；超时只作为安全上限，并应报告最后观测值。
+- 固定 sleep 只允许直接验证时间预算或刻意构造“操作超过超时”的输入，必须写清理由；不能把 sleep 当作正常同步手段。
+- 测试创建的进程、端口、数据库和临时目录必须在成功、失败、超时路径清理。删除临时目录前必须验证绝对路径属于测试专属根目录，终止进程必须使用本测试创建的 PID，不能按进程名误杀。
+- 时间、日期、时区、语言、主题、storage、缓存和随机输入必须由 fixture 控制或在测试后恢复，测试不能依赖执行顺序和前一项留下的状态。
+- `.only`、未登记 `.skip` 和无理由 `#[ignore]` 禁止进入默认链。ignored 只允许精确的 performance/manual environment/破坏性诊断项，并必须有可执行替代入口。
+- mutation 必须变异真实生产模块，search 失效时立即失败，预期的 detached rejection 只能在单个 mutant 作用域捕获，临时产物必须始终清理。
+
+`check:test-governance` 自动发现顶层测试和 package script 递归执行图，阻止孤儿入口、重复 owner、缺失路径、默认门禁重复执行、focused/skipped 测试和未登记 ignored。其 `--self-test` 必须覆盖这些失败模式以及合法 coverage、mutation 和 performance ignored 场景；治理脚本不能维护第二份手写测试文件清单。
+
+命中风险时追加验证：
+
+- 改动 Rust tracking 主链、数据边界或恢复路径：追加 `pnpm run check:rust`
+- 改动 IPC 注册、capability、SQLite plugin 或真实桌面运行时：追加 `pnpm run test:tauri-runtime-smoke`
+- 性能敏感的 read model、SQLite 查询或导航路径：追加 `pnpm run perf:stable`
+- 改动 release / changelog / updater：追加 `pnpm run release:validate-changelog`
+- 准备正式发布：本地执行 `pnpm run release:check`，安装包构建与 updater 产物生成默认交给 GitHub Actions
+
+默认 CI gate 与 release workflow 必须覆盖 `pnpm run check:full` 的全部检查；工作流可拆分为独立 job 执行，具体编排由 `.github/workflows/` 拥有。
+
+机器 gate 按失败类型分工，具体扫描路径、allowlist、预算和执行顺序由 `scripts/*`、测试与 `package.json` 拥有：
+
+- 类型、命名、前端/Rust owner 和 IPC/capability gate 保护编译契约、依赖方向、command 注册、permission set 与敏感 caller guard；例外必须精确且有自测，不能使用目录或前缀通配。
+- hotspot、Quiet Pro style debt 与 bundle gate 保护已经确认的结构和性能预算；功能 PR 不能为通过检查顺手上调，债务减少时应收紧机器基线。
+- coverage 与 mutation 保护选定的高风险生产 owner；coverage 不能用平均值掩盖低覆盖文件，mutation 必须修改真实生产代码并由行为断言杀死。
+- SSR smoke、真实 browser smoke 与 Tauri runtime smoke 分别保护构建渲染、DOM/交互和真实 IPC/plugin/落盘边界，任何一层都不能冒充另一层。
+- 导出面和死代码报告是审计信号，不是批量删除授权；逐项排除动态加载、协议注册、生成入口和 test-only 可见性后才能删除。
+
+升级可信链路是受保护边界：当前 schema migration、legacy schema repair、基线归一化和已安装数据库直升保护不能因名称含 `legacy` 或 `migration` 被当作普通兼容代码清理。移除前必须证明不再承担已发布版本升级职责，并通过独立执行单、风险说明和自动化测试。旧产品身份、旧路径、旧 localStorage key 或旧备份格式等迁移窗口兼容，只有在承诺窗口结束、用户提醒和退出验证完成后才能删除。
+
+WebDAV 密码返回须按 [`architecture.md`](./architecture.md#43-本地数据读取通道) 的窄安全例外验证 caller guard、用户主动显示、禁止预取/记录/持久化、隐藏后清除及 Widget 拒绝，并覆盖跨 profile 隔离。
+
+### 5.2 Bundle 长期治理与预算变更
+
+Bundle 治理的目标不是让构建产物永远不增长，而是让代码只在需要它的路径加载，并让每次增长都有明确的产品价值、owner 和性能影响。功能数量增加可以使总产物合理增长，但不能默认使启动路径、公共依赖或无关页面一起变重。
+
+长期管理必须区分三个概念：
+
+- **预算（budget）**：产品当前可以接受的体积上限，是需要维护的性能边界。构建结果接近预算不会自动产生更高预算。
+- **发布基线（release baseline）**：最近一次正式发布确认的实际构建结果，用于观察版本间变化。发布基线可以随正式版本更新，但不能自动改写预算。
+- **优化目标（target）**：希望通过拆包、按需加载或依赖治理达到的方向，不等同于当前构建是否合格的硬门槛。
+
+默认使用生产构建的 gzip 体积作为可重复比较口径，并分别管理：
+
+- 启动入口 JS 与首屏 CSS：直接影响启动和首屏，属于最严格的长期预算。
+- 公共依赖 chunk：由所有相关页面共同承担，不应因单个功能方便而持续增长。
+- Feature-owned lazy chunk：由 Dashboard、History、Data、Settings 等真实 owner 分别承担，允许随已确认能力合理增长。
+- Lazy support chunk：必须能说明被哪些 feature 使用，不能成为没有 owner 的依赖堆积区。
+- 总 JS、CSS 与 chunk 数量：用于观察产品整体趋势和发现重复依赖，不单独代表启动性能。
+
+当前机器可执行的具体阈值以 [`../scripts/check-bundle-budget.ts`](../scripts/check-bundle-budget.ts) 为准。阈值必须按加载阶段和 owner 单独维护，不能只保留一个不断扩大的“总 bundle 上限”。既有功能增长应优先落入对应 lazy chunk；无关功能不得把成本推入入口或公共依赖。
+
+#### 预算变更的允许条件
+
+只有满足以下原因之一，才能提出提高预算：
+
+- 已确认的长期产品能力带来不可避免、可归属的代码增长。
+- 框架或运行时升级改变了构建产物，并且保留升级的收益高于体积成本。
+- 拆包策略调整使代码在 chunk 之间合理迁移，旧预算已不能表达新的加载边界。
+- 原预算的统计口径、chunk 匹配或测量方法存在错误。
+- 可重复的启动或页面加载测量证明，旧预算已不能正确表达实际性能风险。
+
+以下理由不能用于提高预算：
+
+- 构建检查失败，需要先让 CI 通过。
+- 软件功能越来越多，所以所有预算都应该自然上涨。
+- 没有定位增长来源，或无法说明增长属于哪个 owner。
+- 拆包、按需导入、依赖替换或去重暂时不方便。
+- 为实验、临时兼容层、待删除代码或未来可能需要的功能预留空间。
+- 用提高总预算掩盖入口、公共依赖或单一 feature chunk 的异常增长。
+
+#### 预算变更前的证据
+
+预算变更必须同时提供：
+
+- 旧预算、发布基线、当前实际值、建议新预算，以及绝对增长和增长比例。
+- 受影响的入口、公共依赖、feature chunk、support chunk 或 CSS owner。
+- 造成增长的主要模块、依赖或打包变化。
+- 对懒加载、按需导入、拆包、去重、依赖替换和移除的排查结果。
+- 对启动路径、首屏或相关功能首次打开体验的影响判断；高风险增长应提供可重复测量。
+- 预算提高的有效范围，不能用一个局部增长申请同步放宽其他指标。
+
+新预算按“确认后的必要体积加有限缓冲”确定，不能直接等于失败后的临时构建结果，也不能一次性预留大量空间。默认最大缓冲为：
+
+- 启动入口、公共依赖和 CSS：确认必要体积的 `5%`。
+- Feature-owned lazy chunk：确认必要体积的 `10%`。
+- 总产物：不因单次增长自动增加缓冲；通过发布基线观察趋势后再判断是否需要调整长期上限。
+
+#### 变更与发布维护流程
+
+1. 先运行生产构建和 bundle 检查，固定同一环境、同一压缩口径下的结果。
+2. 定位增长到具体加载阶段、chunk、模块和 owner，并先完成合理的减重排查。
+3. 如果仍需提高预算，形成包含上述证据的独立预算决策，不把“提高阈值”当成功能实现的收尾动作。
+4. 预算数字只在机器可执行的预算来源中更新；长期文档保留规则和决策要求，避免复制易漂移的当前数值。
+5. 更新后重新运行完整构建与 bundle 检查，并确认没有把成本转移到入口、公共依赖或其他 owner。
+6. 正式发布前记录实际构建结果作为该版本的发布基线；发布基线更新不得自动提高预算。
+7. 优化使稳定体积明显下降时，应同步收紧对应预算，避免已经释放的空间被无意识重新占满。
+
+预算变更应保持独立、可追溯，并在提交说明中记录原因、体积对比、排查结果和影响范围。一句话原则是：
+
+> Bundle 预算变更是性能边界决策，不是修复构建失败的手段。
+
+性能优化的额外规则：
+
+- 必须说明场景
+- 必须给出前后可比依据
+- 高频路径除平均值外，应尽量记录 `p50`、`p95`、`max`，避免平均值掩盖体感尖刺
+- 必须证明收益大于复杂度
+- 默认先做无感优化，再做体验取舍；不得为了降低任务管理器数字牺牲启动、切页、widget 唤出与 tracking 可信度
+- Windows 平台 owned resource 应优先使用 RAII guard 表达释放责任，包括 process handle、snapshot handle、GDI bitmap/DC、owned icon、COM 初始化和未来可能引入的 WinEvent hook
+- 高频平台查询应优先考虑短 TTL 缓存、negative cache、in-flight 合并和退避，避免后台采样对同一资源重复开销
+- widget WebView 生命周期、启动暖机收缩、透明窗口策略和 foreground event hook 属于体验敏感实验项；未证明收益明显且手感无损前，不应默认启用
+- widget 隐藏路径如果启用资源回收，应先保持即时 park 以保护收起手感，再通过 generation/token 防护做延迟销毁，避免旧 timer 销毁新唤出的 widget
+- 后台优化这类会释放 UI WebView 的资源策略必须默认关闭；用户可见文案不暴露具体等待阈值，内部实现用统一阈值和 generation/token 防护，确保短时间重复打开关闭仍走快速复用路径
+
+性能入口与场景清单由 `package.json` 和 benchmark 脚本拥有。长期口径是固定场景后比较 average、p50、p95 与 max，以子进程失败、预算超限或不允许的 SQLite table scan 为失败；不得并发运行制造虚假吞吐，也不得把 stub browser 路径描述成真实 SQLite I/O。生命周期测量必须等待可信 read model 与实际内容提交，不能通过删除加载工作或轮询过早 DOM 节点改善数字。
+
+---
+
+## 6. 长期关注热点
+
+长期需要持续高警惕的热点不是“某个文件行数大”，而是这些风险类型：
+
+- tracking runtime 主链
+- read model 与 replay 边界
+- backup / restore / cleanup / release / upgrade 链路
+- app 壳层与兼容壳回流
+- 跨层 facade 或 forwarding 重新变厚
+- 高频刷新、轮询、缓存与 SQLite 查询成本
+
+当这些区域发生变化时，默认要先补验证或测量，再谈整理和优化。
+
+备份与恢复链路的最低风险证据包括：快照一致性与摘要校验、危险 ZIP 路径和资源上限拒绝、覆盖恢复中断回滚、合并事务回滚与重复导入幂等、父子 ID 重映射、当前数据冲突优先，以及 WebDAV 下载后重新走正式 preview。涉及文件切换或格式分派时，默认运行 `pnpm run check:full`，不能只用成功路径证明安全。
+
+---
+
+## 7. 本地化质量路由
+
+本地化契约、界面消息文案或原生表面变更必须通过 i18n self-test 与真实仓库检查，覆盖 key、参数、CLDR 复数类别、source-review hash、generated stale 和硬编码。结构性变更使用 `pnpm run check:full`；只改消息资源翻译时至少运行 i18n、类型与命中的界面测试。完整 schema、XLSX 不可信输入、生成和贡献流程由 [`localization.md`](./localization.md) 拥有；发布说明正文与其界面消息的边界由[发布规范](./versioning-and-release-policy.md#83-release-与-app-note) 拥有。
+
+## 8. 文档质量边界
+
+长期文档的更新准入、事实归属、整节复核、生命周期和编码由根 [`AGENTS.md`](../AGENTS.md#documentation-hygiene) 拥有；本节不维护第二套流程。审查长期文档 diff 时按该规则核对修改是否必要及其归属，prose 完整性按第 4.6 节判断。机器检查只能证明其实际扫描范围内的可检测规则，不能替代语义审查；工程门禁不能依赖 ignored Agent 状态。
+
+## 9. 与其他长期文档的关系
+
+- 产品边界与优先级：[`product-principles-and-scope.md`](./product-principles-and-scope.md) 与 [`roadmap-and-prioritization.md`](./roadmap-and-prioritization.md)
+- 结构与 owner：[`architecture.md`](./architecture.md)
+- 稳定期修复决策：[`issue-fix-boundary-guardrails.md`](./issue-fix-boundary-guardrails.md)
+- UI 质量：[`quiet-pro-component-guidelines.md`](./quiet-pro-component-guidelines.md)
+- 版本、发布与升级：[`versioning-and-release-policy.md`](./versioning-and-release-policy.md)
+- Web Activity 协议：[`web-activity-protocol.md`](./web-activity-protocol.md)
+
+本文只拥有风险模型、质量 gate 与验证原则，不重复其他 owner 的完整契约。

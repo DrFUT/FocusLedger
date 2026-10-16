@@ -1,0 +1,1399 @@
+# Contributing To Patina
+
+[English](#english) · [简体中文](#zh-cn)
+
+<a id="english"></a>
+
+## English
+
+Thank you for taking the time to contribute.
+
+Patina is a personal, local-first Windows desktop time tracker. The project
+values trustworthy records, clear ownership boundaries, readable UI, and
+changes that remain easy to maintain over time.
+
+This guide explains how to prepare a change, open a pull request, respond to
+review feedback, and decide whether a change is ready to merge.
+
+## 1. Start Here
+
+Start with the product scope. Read the other owners when your change involves
+their subject; this is a task map, not an all-documents prerequisite:
+
+- [`docs/product-principles-and-scope.md`](docs/product-principles-and-scope.md)
+- [`docs/roadmap-and-prioritization.md`](docs/roadmap-and-prioritization.md)
+- [`docs/engineering-quality.md`](docs/engineering-quality.md)
+- [`docs/architecture.md`](docs/architecture.md)
+- [`docs/issue-fix-boundary-guardrails.md`](docs/issue-fix-boundary-guardrails.md)
+- [`docs/quiet-pro-component-guidelines.md`](docs/quiet-pro-component-guidelines.md) for UI work
+- [`docs/versioning-and-release-policy.md`](docs/versioning-and-release-policy.md) for release work
+
+The active top-level files under `docs/` are the current sources of truth.
+Files under `docs/archive/` are historical context and should not be used as the
+default implementation basis.
+
+## 2. Project Priorities
+
+When several implementation options are possible, use this order of priority:
+
+1. Protect tracking correctness and local data safety.
+2. Preserve clear ownership boundaries.
+3. Keep high-frequency desktop workflows readable and reliable.
+4. Prefer the smallest change that fully solves the problem.
+5. Add new surface area only when it fits the current product scope.
+
+Patina is intentionally focused on personal, local-first Windows desktop
+use. Team SaaS features, account systems, cloud-first workflows, mobile-first
+features, and decorative complexity are not current priorities unless the
+project direction is explicitly changed first.
+
+## 3. Before You Start A Change
+
+The coordination requirements below apply to external contributors. Local work
+already authorized by the maintainer follows
+[`AGENTS.md`](AGENTS.md#task-scope-and-continuation) for scope, reassessment, and
+continuation.
+
+### 3.1 Check The Existing Context
+
+Before implementing a fix or feature:
+
+1. Search existing issues and pull requests for related work.
+2. Read the relevant active project documents.
+3. Identify the real owner of the behavior before choosing a file.
+4. Decide whether the task is a focused change or a broader boundary change.
+5. Keep unrelated cleanup out of the pull request.
+
+Before starting non-trivial or potentially overlapping work, coordinate with
+the maintainer to avoid duplicate or conflicting implementation.
+
+If a fix requires a new shared abstraction, a cross-layer responsibility move,
+or a new compatibility wrapper, reassess the owner and discuss the design with
+the maintainer before implementation, following the
+[fix boundary guardrails](docs/issue-fix-boundary-guardrails.md).
+
+### 3.2 Choose A Suitable Issue
+
+For a focused bug fix, small UX improvement, or clearly scoped feature, it is
+fine to open a pull request directly and reference the related issue.
+When opening a new issue, use the matching GitHub Issue Form and remove or
+redact window titles, local database contents, backup files, access tokens, and
+personal paths before posting.
+
+For larger work, discuss the direction first when the change:
+
+- modifies tracking session semantics;
+- changes backup, restore, cleanup, or database migration behavior;
+- exposes a new local or network interface;
+- adds a new shared abstraction or cross-layer dependency;
+- changes product scope;
+- introduces a new UI direction outside the existing Quiet Pro system.
+
+### 3.3 Pull Request Intake Gate
+
+A pull request is ready for maintainer review only after it passes the project
+intake gate.
+
+For Patina, pull request scope means:
+
+```text
+one accepted problem
++ the smallest set of necessary code changes
++ validation that covers the new risk
+```
+
+"Related to the feature" is not enough. Every changed file and behavior must be
+necessary for the accepted problem, must sit under the correct owner, and must
+fit the owning area's architecture, UI system, and validation expectations.
+
+Before requesting review, confirm:
+
+- the change is linked to an accepted issue, Project item, or explicit
+  maintainer-approved scope;
+- the pull request solves one coherent problem only;
+- every changed file is necessary for that problem;
+- new behavior is placed under the real owner, not the easiest temporary
+  directory;
+- UI changes follow Quiet Pro and include externally hosted screenshots;
+- the change does not add standalone CSS, hardcoded visual styles, or a new
+  visual direction outside the design system;
+- user-facing labels, placeholders, titles, and accessibility text are added to
+  the relevant copy owner instead of inline JSX literals;
+- tracking, SQLite, backup, restore, cleanup, export, migration, settings
+  persistence, screen capture, and local or network interface changes include
+  focused tests;
+- quality gate scripts, CI workflows, bundle budgets, and hotspot budgets are
+  not changed inside a feature pull request unless the maintainer explicitly
+  asked for that maintenance work;
+- existing tests and checks remain reachable from the normal `pnpm run check`
+  validation chain; new focused tests may extend that chain but must not replace
+  or remove existing validation;
+- the diff is small enough to review, or has been split by behavior, owner, or
+  independently verifiable stage.
+
+Large features should be discussed before implementation. A pull request whose
+main implementation, UI, owner placement, or tests must be rewritten by the
+maintainer is not a mergeable contribution. It may be marked `Needs Author
+Changes` or `Not Accepted` instead of receiving a full line-by-line review.
+
+The maintainer may stop the first review at the intake gate. This is meant to
+save time for both sides: fix the scope, split, owner placement, UI, or tests
+first, then request review again.
+
+For external pull requests, accepted scope is authorization, not self-reporting.
+It must be traceable to an accepted issue, Project item, or explicit
+maintainer-approved scope. PR body text, comments, linked issues, and author
+claims provide context but cannot bypass the intake gate.
+
+Automated intake has no label-based bypass. Oversized pull requests must be
+split by behavior, owner, or independently verifiable stage. Risk-bearing
+changes must include focused tests that match the changed risk area, or be
+handled by an explicit maintainer-owned follow-up outside the external pull
+request. Wrong owner placement, retired directories, unowned shared styles,
+hardcoded Quiet Pro escapes, and incomplete contributor checklist items remain
+hard failures.
+
+The intake gate runs in its own `PR Intake` workflow because it needs pull
+request-only context: the three-dot base/head PR diff and PR body. The workflow
+checks out the trusted base revision and inspects the pull request head without
+executing contributor-modified gate code or package scripts. Normal `Verify`
+checks run for pull requests only after `PR Intake` succeeds. Focused tests
+are matched by risk area. For example, export implementation changes need
+`tests/export*` or Rust export tests; settings persistence changes need
+settings or persistence tests. A TypeScript test counts only when it is reachable
+from the repository's normal `pnpm run check` validation chain. An unrelated or
+unregistered test file does not satisfy the risk gate. A separate Rust test file
+must be Cargo-discoverable or referenced by the crate's module tree; inline Rust
+tests must add an actual test function. Deleting old assertions or
+editing a broad smoke test without adding positive coverage for the changed risk
+area does not satisfy the gate.
+
+GitHub may still ask a maintainer to approve Actions for first-time external
+contributors. That approval only allows workflows to start; it is not scope
+approval and does not bypass intake.
+
+Draft pull requests do not run the intake job. Complete the template and obtain
+scope approval before marking the pull request ready for review.
+
+### 3.4 Install Dependencies
+
+Use Node from `.node-version` and the exact pnpm version in `package.json#packageManager`. Install that pnpm version with `npm install --global pnpm@<version>` if needed. Use the committed lockfile when preparing a contribution:
+
+```bash
+pnpm install --frozen-lockfile
+```
+
+Useful development commands:
+
+```bash
+pnpm run tauri dev
+pnpm run build
+```
+
+`pnpm run tauri dev` automatically uses `src-tauri/tauri.dev.conf.json`. Do not
+start a debug build with the production identifier: development and installed
+editions are designed to coexist with separate data and single-instance scopes.
+
+Debug builds disable single-instance recovery by default. To test reopening with
+the tray icon hidden, stop the existing development process and run the following
+in PowerShell from the repository root:
+
+```powershell
+$env:PATINA_E2E_SINGLE_INSTANCE = "1"
+pnpm run tauri dev
+```
+
+Keep that terminal running. In another PowerShell at the repository root, set the
+same environment variable and run `& .\src-tauri\target\debug\patina.exe` to reveal
+the existing development window. The installed app's Start menu entry cannot
+reopen a development instance.
+
+## 4. Branch And Commit Workflow
+
+### 4.1 Create A Branch From The Latest `main`
+
+Start from an up-to-date `main` branch:
+
+```bash
+git switch main
+git fetch origin main
+git pull --ff-only origin main
+git switch -c feat/short-description
+```
+
+Use a short branch name that describes the change:
+
+```text
+feat/local-websocket-api
+fix/session-sealing
+docs/contribution-guide
+```
+
+If you contribute from a fork, add the main repository as `upstream` and use
+`upstream/main` as the source branch:
+
+```bash
+git remote add upstream https://github.com/Ceceliaee/patina.git
+git fetch upstream main
+git rebase upstream/main
+```
+
+### 4.2 Keep The Pull Request Focused
+
+A pull request should solve one coherent problem.
+
+Avoid:
+
+- unrelated refactors;
+- formatting churn in untouched areas;
+- drive-by renames;
+- generated file changes that are not required by the task;
+- changing tracking behavior as part of an unrelated UI or integration feature.
+
+If you notice a separate issue while working, mention it in the pull request or
+open a follow-up issue instead of expanding the current diff.
+
+### 4.3 Write Clear Commits
+
+Prefer small, understandable commits with concise messages:
+
+```text
+feat: add local websocket settings
+fix: revoke websocket clients when token changes
+docs: add pull request contribution guide
+```
+
+Common prefixes:
+
+- `feat:` for a user-facing capability;
+- `fix:` for a bug fix;
+- `docs:` for documentation-only changes;
+- `refactor:` for behavior-preserving structure improvements;
+- `test:` for test-only changes;
+- `chore:` for maintenance work;
+- `release:` for release preparation.
+
+Before creating a commit, inspect the staged scope:
+
+```bash
+git diff --cached --stat
+git diff --cached --numstat
+```
+
+Commit reviewability rules:
+
+- More than 1,000 changed lines of manually maintained content, counting
+  additions and deletions, triggers mandatory split review.
+- Touching more than 25 files also triggers mandatory split review.
+- Split by behavior, owner, or independently reviewable stage by default.
+- An oversized commit requires explicit approval after explaining why it
+  cannot reasonably be split. Commit approval does not waive the external PR
+  intake size gate; discuss an indivisible PR scope before implementation.
+- Documentation and wholly new files are exempt from the per-commit
+  1,000-line limit, not the 25-file limit or external PR intake. Do not split
+  a single document, new file, or tightly coupled new files merely for line count.
+- Lockfiles, generated files, snapshots, bulk assets, and mechanical migration
+  output may be excluded from the manually maintained line count.
+- Isolate excluded generated or mechanical changes in a separate commit when
+  practical.
+- Do not satisfy the limit by arbitrarily splitting files.
+- Keep each commit buildable or independently verifiable where practical.
+- One Project item may produce multiple commits and should not be compressed
+  into one oversized commit.
+- Keep subjects focused and changes related unless the user requests one commit.
+
+Do not use issue-closing keywords such as `Closes`, `Fixes`, or `Resolves`
+unless the maintainer explicitly asks to close the issue. Reference related
+issues in a separate commit-body paragraph, never in the subject. Use a concise
+conventional subject, and do not rewrite pushed history to normalize older
+subjects. For example:
+
+```text
+Refs #4
+```
+
+## 5. Implementation Boundaries
+
+### 5.1 Use Owner-First Placement
+
+Choose the real owner before choosing the easiest file to edit.
+
+Frontend long-term structure:
+
+```text
+src/
+  app/
+  features/
+  shared/
+  platform/
+```
+
+Rust long-term structure:
+
+```text
+src-tauri/src/
+  lib.rs
+  app/
+  commands/
+  platform/
+  engine/
+  data/
+  domain/
+```
+
+### 5.2 Frontend Rules
+
+- Put feature-specific behavior under `src/features/<feature>/`.
+- Put external environment boundaries under `src/platform/`.
+- Keep `src/shared/` for stable, low-context capabilities reused across
+  features.
+- Keep `src/app/` focused on application shell and cross-feature coordination.
+- Do not access SQLite, Tauri APIs, or platform gateways directly from feature
+  components or hooks.
+- Do not reintroduce retired root layers such as `src/lib/` or `src/types/`.
+
+### 5.3 Rust Rules
+
+- Keep `lib.rs` focused on application assembly.
+- Keep `commands/*` thin: receive parameters, map DTOs, and delegate.
+- Keep platform-specific behavior under `platform/*`.
+- Keep tracking rules and runtime behavior under `engine/*`.
+- Keep SQLite pools, SQL, repositories, backup, and restore data access under
+  `data/*`.
+- Keep stable domain concepts and invariants under `domain/*`.
+
+Do not move business logic into `commands/*`, `app/*`, or `lib.rs` for
+convenience.
+
+### 5.4 UI Rules
+
+UI work must follow the Quiet Pro baseline:
+
+- calm, professional, restrained desktop-product UI;
+- typography, spacing, alignment, and hierarchy before decoration;
+- semantic tokens before hardcoded colors, radii, borders, or shadows;
+- existing `panel`, `control`, `chip`, and `status` archetypes before one-off
+  treatments;
+- complete interaction states where relevant: default, hover, active, focus,
+  disabled, loading, and empty.
+
+Do not introduce glassmorphism, blur-heavy panels, neon glow, large gradient
+backgrounds, or page-local visual styles that do not belong to the design
+system.
+
+### 5.5 External Interface Rules
+
+Changes that expose a local or network interface need an explicit security
+review. Describe:
+
+- whether the interface is disabled by default;
+- which address it binds to;
+- who can connect;
+- how authentication works;
+- how credentials are generated, stored, rotated, and revoked;
+- how active and in-progress connections are stopped;
+- how startup failures and port conflicts become visible to the user;
+- whether the interface changes the local-first product boundary.
+
+An interface bound to `127.0.0.1` is available only on the same computer. LAN
+or remote access is a separate product and security decision.
+
+## 6. Validation Requirements
+
+Run focused checks while implementing, then run the required validation before
+requesting review. Validation requirements are owned by
+[`docs/engineering-quality.md`](docs/engineering-quality.md#5-默认验证门槛);
+[`package.json`](package.json) defines each command's checks and execution order.
+
+### 6.1 Default Code Validation
+
+For frontend, UI, settings, read-model, or general code changes:
+
+```bash
+pnpm run check
+```
+
+### 6.2 Rust And Architecture Validation
+
+When [engineering quality §5](docs/engineering-quality.md#5-默认验证门槛)
+requires full validation for the actual change, run:
+
+```bash
+pnpm run check:full
+```
+
+For IPC registration, capability, plugin SQL, or real desktop-runtime changes,
+also run `pnpm run test:tauri-runtime-smoke` on Windows. For performance-sensitive
+read-model, SQLite-query, or navigation work, also run `pnpm run perf:stable`.
+
+### 6.3 Release Validation
+
+For release, changelog, or updater changes, add this check to the default and
+risk-based validation required by
+[engineering quality](docs/engineering-quality.md#5-默认验证门槛):
+
+```bash
+pnpm run release:validate-changelog
+```
+
+When preparing a formal release, run:
+
+```bash
+pnpm run release:check
+```
+
+[Release policy](docs/versioning-and-release-policy.md) owns version, tag,
+updater, and packaging contracts. Its
+[release validation requirements](docs/versioning-and-release-policy.md#10-发布前的最低验证门槛)
+also cover version consistency, independent artifact checks, workflow
+responsibilities, and the local-build exception for release-pipeline diagnosis.
+Changes to code, runtime behavior, or workflows retain their applicable
+validation requirements.
+
+### 6.4 Documentation-Only Changes
+
+Documentation-only pull requests use documentation checks and any validation required by changed policies or operational claims under
+[`docs/engineering-quality.md`](docs/engineering-quality.md#5-默认验证门槛).
+Check:
+
+- links;
+- command names;
+- terminology;
+- UTF-8 readability;
+- consistency with active top-level project documents.
+
+### 6.5 Risk-Based Additional Checks
+
+Add tests that match the behavior you changed.
+
+| Change area | Minimum additional expectation |
+| --- | --- |
+| Tracking lifecycle | Cover session start, transition, sealing, recovery, or AFK behavior as relevant |
+| SQLite schema or migration | Cover upgrades, preserved data, defaults, and legacy databases |
+| Backup or restore | Cover preview, compatibility, data preservation, and runtime refresh |
+| Settings | Cover persistence normalization, save behavior, and runtime synchronization |
+| UI interaction | Cover primary interaction states and relevant browser smoke behavior |
+| Local or network interface | Cover authentication, credential rotation, shutdown, active clients, in-progress clients, bind failures, and initial synchronization |
+
+Passing existing tests does not replace coverage for newly introduced risk.
+
+## 7. Open A Pull Request
+
+### 7.1 Pull Request Title
+
+Use a concise title that describes the result:
+
+```text
+feat: add optional local WebSocket status API
+fix: seal active sessions after resume
+docs: document contribution and PR workflow
+```
+
+### 7.2 Pull Request Description
+
+Use the [pull request template](.github/pull_request_template.md), which owns the
+required form. Describe the problem and accepted scope, identify the real owners,
+and explain the changed risks and failure/recovery behavior. Complete the relevant
+UI evidence and validation fields, then the Contributor Checklist. Use a reasoned
+`N/A` for unaffected areas. Keep the description readable and lead with behavior.
+
+### 7.3 Reference Issues Without Closing Them
+
+Use:
+
+```text
+Refs #4
+```
+
+Do not use:
+
+```text
+Closes #4
+Fixes #4
+Resolves #4
+```
+
+Issue state changes are explicit maintainer actions. A pull request should not
+close, reopen, label, or otherwise mutate an issue unless the maintainer asks
+for that action.
+
+### 7.4 Include External Screenshots For UI Changes
+
+For visible UI changes, include screenshots showing:
+
+- the relevant page;
+- important empty, disabled, or error states when applicable;
+- light and dark themes when the visual role changes;
+- narrow layouts when the change affects responsive behavior.
+
+Attach these screenshots through GitHub `user-attachments` or another
+repository-external HTTPS host. Never add review screenshots, GIFs, videos, or
+an evidence-media directory to the repository. A URL pointing to a blob or raw
+file in this repository is still repository-hosted evidence and does not
+satisfy the intake gate. Product-owned icons and feature assets remain in their
+real code owners and are not review evidence.
+
+Also list the affected visual/interaction states, keyboard or focus behavior
+(`N/A` with a reason is acceptable when unaffected), and the repeatable command
+or existing owner test that protects the change. A screenshot alone does not
+prove interactive behavior.
+
+## 8. Rebase Before Review Or Merge
+
+### 8.1 What Rebase Means
+
+Rebase moves your branch commits on top of the latest `main`:
+
+```text
+Before:
+
+main:       A---B---C
+                 \
+feature:          D---E
+
+After:
+
+main:       A---B---C
+                     \
+feature:              D'---E'
+```
+
+This keeps the pull request based on current code and exposes conflicts before
+merge.
+
+### 8.2 When To Rebase
+
+Rebase when:
+
+- GitHub reports merge conflicts;
+- `main` changed in the same files;
+- the maintainer asks for an update;
+- you are preparing the final version for merge.
+
+### 8.3 Rebase Commands
+
+For a branch pushed directly to this repository:
+
+```bash
+git status
+git fetch origin main
+git rebase origin/main
+```
+
+Resolve conflicts carefully, then continue:
+
+```bash
+git add path/to/resolved-file
+git rebase --continue
+```
+
+After the rebase:
+
+```bash
+git push --force-with-lease
+```
+
+Use `--force-with-lease`, not `--force`. It refuses to overwrite unexpected
+remote changes.
+
+If the rebase needs to be abandoned:
+
+```bash
+git rebase --abort
+```
+
+For fork-based contributions, replace `origin/main` with `upstream/main`, then
+push the rebased branch to your fork.
+
+### 8.4 Resolve Conflicts By Behavior
+
+Do not choose conflict sides mechanically.
+
+When resolving conflicts:
+
+1. Understand what changed on `main`.
+2. Keep newer correctness fixes and architecture direction from `main`.
+3. Reapply only the feature-specific behavior needed by the pull request.
+4. Remove unrelated changes that are already superseded by `main`.
+5. Reassess validation evidence under
+   [engineering quality](docs/engineering-quality.md#5-默认验证门槛), rerun checks
+   whose evidence is no longer valid, and ensure valid evidence still covers
+   every required gate for the change.
+
+Ask for help if a conflict touches tracking semantics, SQLite migrations,
+backup or restore behavior, or a boundary you do not fully understand.
+
+## 9. Review Process
+
+Review is not only a style pass. The main purpose is to protect trustworthy
+tracking behavior, local data, clear ownership, and long-term maintainability.
+
+### 9.1 Review Order
+
+Reviewers should check in this order:
+
+1. Does the change solve the stated problem?
+2. Does it fit the current product scope?
+3. Does the diff contain unrelated changes?
+4. Is the code placed under the correct owner?
+5. Could it affect tracking correctness, local data, privacy, or security?
+6. Are failure states visible and recoverable?
+7. Do tests cover the new risk?
+8. Does the branch conflict with the latest `main`?
+9. Are remaining style or naming improvements worth blocking the merge?
+
+### 9.2 Blocking Issues
+
+Resolve these before merge:
+
+- possible data loss or corruption;
+- incorrect tracking, session transitions, or recovery behavior;
+- authentication, privacy, or credential-revocation gaps;
+- disabled services or closed connections continuing to expose data;
+- unsafe backup, restore, cleanup, or migration behavior;
+- build failures or required validation failures;
+- conflicts with `main`;
+- unrelated changes that obscure the intended diff;
+- a responsibility placed in the wrong layer when merging it would create a
+  new long-term boundary problem.
+
+### 9.3 Follow-Up Issues
+
+Small non-blocking improvements can be handled after merge when the accepted
+implementation is already correct and safe. Examples:
+
+- copy polish;
+- minor naming improvements;
+- small readability refactors;
+- optional diagnostics;
+- additional nice-to-have tests beyond the risk-bearing path.
+
+Do not defer correctness, data safety, privacy, security, or required boundary
+fixes as follow-up work.
+
+### 9.4 Responding To Review Feedback
+
+When updating a pull request:
+
+1. Reply briefly when the intended behavior needs clarification.
+2. Push focused follow-up commits or rebase when requested.
+3. Mention which validation commands were rerun.
+4. Mark conversations resolved only when the underlying issue is actually
+   addressed.
+
+## 10. Merge Rules
+
+This is a personal repository. The maintainer may push confirmed internal work
+directly to `origin/main`. Contributor pull requests should stay focused and be
+merged only after the blocking review items are resolved.
+
+Before merging a pull request:
+
+1. Confirm the branch is based on the latest `main`.
+2. Confirm required validation passed.
+3. Confirm blocking review findings are resolved.
+4. Confirm the final diff contains only the intended scope.
+5. Confirm issue references use `Refs #N` unless an explicit close action was
+   requested.
+6. Confirm changelog or release notes are updated when the change belongs in
+   the next release summary.
+
+Do not create extra branches or pull requests for maintainer-owned follow-up
+work unless there is a clear collaboration reason.
+
+## 11. Quick Contributor Checklist
+
+Before requesting review:
+
+- [ ] I read the relevant active project documents.
+- [ ] I searched existing issues and pull requests for related or overlapping work.
+- [ ] My branch started from a recent `main`.
+- [ ] The pull request is linked to an accepted issue, Project item, or explicit maintainer-approved scope.
+- [ ] The pull request solves one coherent problem.
+- [ ] Every changed file is necessary for that accepted problem.
+- [ ] The commits are reviewable; oversized changes were split coherently.
+- [ ] I removed unrelated refactors and formatting churn.
+- [ ] I placed new behavior under the correct owner.
+- [ ] I did not add standalone CSS or hardcoded visual styles outside the design system.
+- [ ] I did not change quality gate scripts, CI workflows, bundle budgets, or hotspot budgets unless the maintainer explicitly requested that maintenance work.
+- [ ] User-facing copy is owned by the relevant copy domain, not hardcoded inline in JSX.
+- [ ] I added focused tests for the risk-bearing behavior.
+- [ ] I ran the validation required for this change under [§6](#6-validation-requirements).
+- [ ] I attached screenshots externally for visible UI changes and did not commit review media.
+- [ ] I documented security behavior for any local or network interface.
+- [ ] I used `Refs #N` instead of an issue-closing keyword.
+- [ ] I rebased if `main` changed or GitHub reports conflicts.
+
+## 12. Quick Maintainer Review Checklist
+
+Before merging:
+
+- [ ] The change fits current product scope.
+- [ ] The diff has a clear owner and no unrelated changes.
+- [ ] Tracking, data safety, privacy, and security risks were checked first.
+- [ ] Failure states are visible and recoverable.
+- [ ] New risk has focused test coverage.
+- [ ] Required validation passed.
+- [ ] The branch is compatible with the latest `main`.
+- [ ] Blocking findings are fixed before merge.
+- [ ] Follow-up work contains only non-blocking improvements.
+- [ ] Issue state changes remain explicit.
+
+---
+
+<a id="zh-cn"></a>
+
+## 简体中文
+
+感谢你愿意为 Patina 做出贡献。
+
+Patina 是一个面向个人使用、本地优先的 Windows 桌面时间追踪工具。
+项目重视可信的记录、清晰的职责边界、可读的界面，以及能够长期维护的改动。
+
+本文说明如何准备改动、提交 Pull Request、响应 review 意见，以及判断一项改动是否可以合并。
+
+### 1. 开始之前
+
+先了解产品范围，再按改动涉及的主题读取相应 owner。以下是任务入口，不是所有任务的全量必读清单：
+
+- [`docs/product-principles-and-scope.md`](docs/product-principles-and-scope.md)
+- [`docs/roadmap-and-prioritization.md`](docs/roadmap-and-prioritization.md)
+- [`docs/engineering-quality.md`](docs/engineering-quality.md)
+- [`docs/architecture.md`](docs/architecture.md)
+- [`docs/issue-fix-boundary-guardrails.md`](docs/issue-fix-boundary-guardrails.md)
+- UI 改动请阅读 [`docs/quiet-pro-component-guidelines.md`](docs/quiet-pro-component-guidelines.md)
+- 发布改动请阅读 [`docs/versioning-and-release-policy.md`](docs/versioning-and-release-policy.md)
+
+`docs/` 顶层的有效文档是当前事实来源。`docs/archive/` 下的文件是历史背景，
+默认不应作为当前实现依据。
+
+### 2. 项目优先级
+
+当存在多种实现方式时，请按以下顺序判断：
+
+1. 保护追踪正确性和本地数据安全。
+2. 保持清晰的职责边界。
+3. 保证高频桌面工作流清楚、可靠。
+4. 优先采用能够完整解决问题的最小改动。
+5. 只有符合当前产品范围时，才增加新的功能表面。
+
+Patina 有意聚焦个人、本地优先的 Windows 桌面使用场景。除非先明确调整项目方向，
+否则团队 SaaS、账号体系、云优先工作流、移动端优先功能和装饰性复杂度都不是当前重点。
+
+### 3. 开始一项改动之前
+
+下列协调要求适用于外部贡献者。维护者已授权的本地工作，按
+[`AGENTS.md`](AGENTS.md#task-scope-and-continuation) 判断范围、技术重评和任务续接。
+
+#### 3.1 检查现有上下文
+
+开始实现修复或功能前：
+
+1. 搜索是否已有相关 issue 和 Pull Request。
+2. 阅读相关的有效项目文档。
+3. 先识别行为的真实 owner，再选择文件。
+4. 判断任务是聚焦的小改动，还是更广泛的边界调整。
+5. 不要在 Pull Request 中混入无关清理。
+
+开始处理非平凡或可能与现有工作重叠的事项前，应先与维护者协调，避免重复或相互冲突的实现。
+
+如果一项修复需要新增共享抽象、跨层迁移职责或新增兼容壳，请按
+[修复边界守则](docs/issue-fix-boundary-guardrails.md) 重新判断 owner，
+并在实现前与维护者讨论设计。
+
+#### 3.2 选择合适的 issue
+
+对于聚焦的 bug 修复、小型 UX 改进或范围清晰的功能，可以直接提交 Pull Request，
+并引用相关 issue。
+新建 issue 时，请使用对应的 GitHub Issue Form，并在发布前移除或脱敏窗口标题、
+本地数据库内容、备份文件、访问 Token 和个人路径。
+
+如果改动存在以下情况，请先讨论方向：
+
+- 修改 tracking session 语义；
+- 修改备份、恢复、清理或数据库 migration 行为；
+- 暴露新的本机或网络接口；
+- 新增共享抽象或跨层依赖；
+- 改变产品范围；
+- 引入 Quiet Pro 体系之外的新 UI 方向。
+
+#### 3.3 Pull Request 准入门禁
+
+Pull Request 只有先通过项目准入门禁，才算准备好进入维护者 review。
+
+在 Patina 中，Pull Request 的范围定义为：
+
+```text
+一个已接受的问题
++ 解决它所必需的最小代码改动集合
++ 覆盖新增风险的验证
+```
+
+“和这个功能相关”不等于范围正确。每个改动文件和行为都必须是解决已接受问题所必需，
+并且符合所属 owner 的架构、UI 系统和验证要求。
+
+请求 review 前，请确认：
+
+- 改动关联了已接受的 issue、Project item，或维护者明确确认的 scope；
+- Pull Request 只解决一个完整、连贯的问题；
+- 每个改动文件都是解决该问题所必需；
+- 新行为放在真实 owner 下，而不是临时放在最方便的目录；
+- UI 改动符合 Quiet Pro，并提供托管在仓库外的截图；
+- 没有新增独立 CSS、硬编码视觉样式，或设计系统之外的新视觉方向；
+- 用户可见文案、placeholder、title 和 accessibility 文案放在对应 copy owner 中，
+  而不是写成 JSX 内联字面量；
+- 涉及 tracking、SQLite、备份、恢复、清理、导出、migration、settings persistence、
+  截屏采集、本机或网络接口的改动，包含对应风险的专项测试；
+- 功能 PR 不改质量门禁脚本、CI workflow、bundle budget 或 hotspot budget，除非维护者
+  明确要求做这类维护工作；
+- 既有测试和检查仍然能从正常的 `pnpm run check` 链路到达；新增专项测试可以扩展该链路，
+  但不能替换或移除既有验证；
+- diff 足够小，便于 review；否则已经按行为、owner 或可独立验证阶段拆分。
+
+大型功能应在实现前先讨论。一个主要实现、UI、owner 放置或测试都需要维护者重写的
+Pull Request，不构成可合并贡献。它会被标记为 `Needs Author Changes` 或
+`Not Accepted`，而不是进入完整逐行 review。
+
+维护者可以在第一轮 review 时停在准入门禁。这样做是为了节省双方时间：请先修正
+scope、拆分、owner、UI 或测试，再重新请求 review。
+
+对于外部 PR，已接受范围是一项授权，而不是作者自述。它必须能追溯到已接受的 issue、
+Project item，或维护者明确确认的 scope。PR 正文、评论、关联 issue 和作者声明只能提供
+上下文，不能绕过准入门禁。
+
+自动准入没有基于 label 的放行机制。超大 PR 必须按行为、owner 或可独立验证阶段拆分。
+涉及风险的改动必须包含匹配风险域的专项测试，或由维护者另开维护者拥有的后续工作处理。
+owner 错误、退休目录回流、未归属 shared styles、Quiet Pro 硬编码逃逸、未完成
+contributor checklist 等仍然是硬失败。
+
+准入门禁运行在独立的 `PR Intake` workflow 中，因为它需要 Pull Request 专属上下文：
+三点 base/head PR diff 和 PR 正文。workflow checkout 可信的 base revision，只读取 PR
+head，不执行贡献者修改过的门禁代码或 package scripts。普通 `Verify` workflow 只在
+`PR Intake` 成功后验证外部 PR。专项测试按风险域匹配。例如导出实现改动需要
+`tests/export*` 或 Rust export 测试；settings persistence 改动需要 settings 或
+persistence 测试。TypeScript 测试只有接入仓库正常的 `pnpm run check` 验证链才算覆盖。
+独立 Rust 测试文件必须能被 Cargo 自动发现或被 crate module tree 引用；内联 Rust 测试
+必须实际新增测试函数。无关或未注册的测试文件不能满足风险门禁。只删除旧断言，或只修改宽泛 smoke 测试而没有
+为对应风险域增加正向覆盖，也不能算通过。
+
+GitHub 仍可能要求维护者先批准首次外部贡献者的 Actions。这个批准只允许 workflow 开始运行，
+不是 scope 批准，也不会绕过准入门禁。
+
+Draft PR 不运行准入 job。请先完成模板并获得范围批准，再将 PR 标记为 ready for review。
+
+#### 3.4 安装依赖
+
+使用 `.node-version` 指定的 Node 和 `package.json#packageManager` 固定的 pnpm 版本。需要安装 pnpm 时，执行 `npm install --global pnpm@<版本>`。准备贡献时，使用已提交的锁文件安装依赖：
+
+```bash
+pnpm install --frozen-lockfile
+```
+
+常用开发命令：
+
+```bash
+pnpm run tauri dev
+pnpm run build
+```
+
+`pnpm run tauri dev` 会自动加载 `src-tauri/tauri.dev.conf.json`。请勿让 debug
+构建使用正式版 identifier；开发版与安装版应使用彼此隔离的数据目录和单实例作用域，
+并可同时运行。
+
+Debug 构建默认关闭单实例唤回。验证隐藏托盘后的重新打开时，先停止已有开发进程，
+再从仓库根目录的 PowerShell 启动：
+
+```powershell
+$env:PATINA_E2E_SINGLE_INSTANCE = "1"
+pnpm run tauri dev
+```
+
+保留该终端运行，在另一个位于仓库根目录的 PowerShell 设置同一环境变量，
+执行 `& .\src-tauri\target\debug\patina.exe`，即可唤回已有开发窗口。
+开始菜单中的安装版入口不能唤回开发版。
+
+### 4. 分支与提交工作流
+
+#### 4.1 从最新 `main` 创建分支
+
+先更新 `main`，再创建分支：
+
+```bash
+git switch main
+git fetch origin main
+git pull --ff-only origin main
+git switch -c feat/short-description
+```
+
+使用简短、能够描述改动的分支名：
+
+```text
+feat/local-websocket-api
+fix/session-sealing
+docs/contribution-guide
+```
+
+如果你从 fork 贡献，请把主仓库添加为 `upstream`，并以 `upstream/main` 为基准：
+
+```bash
+git remote add upstream https://github.com/Ceceliaee/patina.git
+git fetch upstream main
+git rebase upstream/main
+```
+
+#### 4.2 保持 Pull Request 聚焦
+
+一个 Pull Request 应只解决一个完整、连贯的问题。
+
+请避免：
+
+- 无关重构；
+- 未触及区域的格式化改动；
+- 顺手重命名；
+- 与任务无关的生成文件改动；
+- 在无关 UI 或集成功能中顺手修改 tracking 行为。
+
+如果工作中发现另一个问题，请在 Pull Request 中说明或新建后续 issue，
+不要扩大当前 diff。
+
+#### 4.3 编写清晰的 commit
+
+优先使用小而清楚的 commit，并使用简洁的提交信息：
+
+```text
+feat: add local websocket settings
+fix: revoke websocket clients when token changes
+docs: add pull request contribution guide
+```
+
+常见前缀：
+
+- `feat:`：面向用户的新能力；
+- `fix:`：bug 修复；
+- `docs:`：仅文档改动；
+- `refactor:`：不改变行为的结构整理；
+- `test:`：仅测试改动；
+- `chore:`：维护性工作；
+- `release:`：发布准备。
+
+创建 commit 前，先检查暂存区范围：
+
+```bash
+git diff --cached --stat
+git diff --cached --numstat
+```
+
+commit 可审查性规则：
+
+- 手工维护内容的变更超过 1000 行（新增行与删除行之和）时，必须进行拆分复核。
+- 涉及超过 25 个文件时，也必须进行拆分复核。
+- 默认按行为、owner 或可以独立审查的阶段拆成多个连贯 commit。
+- 超大 commit 需要说明无法合理拆分的原因并取得明确批准。单个 commit 的批准不豁免外部 PR 体量门禁；不可拆分的 PR 范围应在实现前讨论。
+- 文档和全新文件不受单个 commit 的 1000 行限制，但仍受 25 文件限制和外部 PR 准入规则约束。不要仅为满足行数拆分单个文档、新文件或紧密关联的一组新文件。
+- lockfile、生成文件、快照、批量资源和机械 migration 输出可以不计入手工维护行数。
+- 在可行时，应把排除计数的生成或机械变更单独提交。
+- 不要为了满足数字限制而按文件随意切块。
+- 每个 commit 在可行时应能够独立构建或验证。
+- 一个 Project item 可以对应多个 commit，不应把整个工作项压缩成一个超大 commit。
+- 除非用户要求合为一个 commit，否则保持标题聚焦、改动相关。
+
+除非维护者明确要求关闭 issue，否则不要使用 `Closes`、`Fixes` 或 `Resolves`
+等自动关闭关键词。相关 issue 引用放在 commit 正文的独立段落中，不放进标题。
+标题使用简洁的规范格式；不要为了统一旧标题而重写已推送历史。例如：
+
+```text
+Refs #4
+```
+
+### 5. 实现边界
+
+#### 5.1 owner 优先
+
+先选择真实 owner，再选择最方便修改的文件。
+
+前端长期结构：
+
+```text
+src/
+  app/
+  features/
+  shared/
+  platform/
+```
+
+Rust 长期结构：
+
+```text
+src-tauri/src/
+  lib.rs
+  app/
+  commands/
+  platform/
+  engine/
+  data/
+  domain/
+```
+
+#### 5.2 前端规则
+
+- feature 私有行为放在 `src/features/<feature>/`。
+- 外部环境边界放在 `src/platform/`。
+- `src/shared/` 只放跨 feature 稳定复用、低上下文依赖的能力。
+- `src/app/` 聚焦应用壳层和跨 feature 协调。
+- feature 的 component 和 hook 不应直接访问 SQLite、Tauri API 或 platform gateway。
+- 不要重新引入已经退出的根层目录，例如 `src/lib/` 或 `src/types/`。
+
+#### 5.3 Rust 规则
+
+- `lib.rs` 聚焦应用装配。
+- `commands/*` 保持薄：接收参数、映射 DTO、转发调用。
+- 平台相关行为放在 `platform/*`。
+- tracking 规则和运行时行为放在 `engine/*`。
+- SQLite pool、SQL、repository、备份和恢复数据访问放在 `data/*`。
+- 稳定的领域概念和不变量放在 `domain/*`。
+
+不要因为修改方便，就把业务逻辑塞进 `commands/*`、`app/*` 或 `lib.rs`。
+
+#### 5.4 UI 规则
+
+UI 改动必须遵守 Quiet Pro 基线：
+
+- 安静、专业、克制的桌面产品界面；
+- 优先使用排版、间距、对齐和层级，而不是装饰；
+- 优先使用语义 token，而不是硬编码颜色、圆角、边框或阴影；
+- 优先复用现有 `panel`、`control`、`chip` 和 `status` 原型，而不是新增一次性样式；
+- 在适用时补齐交互状态：default、hover、active、focus、disabled、loading 和 empty。
+
+不要引入玻璃拟态、重模糊面板、霓虹发光、大面积渐变背景，
+或不属于设计系统的页面局部视觉样式。
+
+#### 5.5 外部接口规则
+
+暴露本机或网络接口的改动需要明确的安全审查。请说明：
+
+- 接口是否默认关闭；
+- 接口绑定哪个地址；
+- 谁可以连接；
+- 鉴权如何工作；
+- 凭据如何生成、存储、轮换和撤销；
+- 已连接和连接中的客户端如何停止；
+- 启动失败和端口占用如何让用户看到；
+- 接口是否改变了本地优先的产品边界。
+
+绑定 `127.0.0.1` 的接口只能被同一台电脑访问。局域网或远程访问属于独立的产品和安全决策。
+
+### 6. 验证要求
+
+实现过程中先运行专项检查，请求 review 前再运行所需的完整验证。验证要求由
+[`docs/engineering-quality.md`](docs/engineering-quality.md#5-默认验证门槛) 拥有；
+各命令的检查组成和执行顺序以 [`package.json`](package.json) 为准。
+
+#### 6.1 默认代码验证
+
+对于前端、UI、设置、读模型或一般代码改动：
+
+```bash
+pnpm run check
+```
+
+#### 6.2 Rust 与架构验证
+
+当[工程质量第 5 节](docs/engineering-quality.md#5-默认验证门槛)
+要求本次实际改动运行完整验证时，执行：
+
+```bash
+pnpm run check:full
+```
+
+如果改动 IPC 注册、capability、plugin SQL 或真实桌面 runtime，还应在 Windows
+运行 `pnpm run test:tauri-runtime-smoke`。如果改动性能敏感的 read model、SQLite
+查询或导航路径，还应运行 `pnpm run perf:stable`。
+
+#### 6.3 发布验证
+
+对于 release、changelog 或 updater 改动，在
+[工程质量](docs/engineering-quality.md#5-默认验证门槛) 要求的默认门槛和风险追加验证之外运行：
+
+```bash
+pnpm run release:validate-changelog
+```
+
+准备正式发布时运行：
+
+```bash
+pnpm run release:check
+```
+
+[发布规范](docs/versioning-and-release-policy.md) 拥有版本、tag、updater 与打包契约。
+其中的[发布验证要求](docs/versioning-and-release-policy.md#10-发布前的最低验证门槛)
+还规定版本一致性、独立产物检查、工作流职责，以及排查发布流水线时的本地构建例外。
+代码、runtime 行为或工作流变化仍需满足各自适用的验证要求。
+
+#### 6.4 仅文档改动
+
+仅文档改动按 [`docs/engineering-quality.md`](docs/engineering-quality.md#5-默认验证门槛) 运行文档检查，并验证改动涉及的政策或操作说明。另请检查：
+
+- 链接；
+- 命令名称；
+- 术语；
+- UTF-8 可读性；
+- 与有效顶层项目文档的一致性。
+
+#### 6.5 基于风险追加验证
+
+请为实际修改的行为补充对应测试。
+
+| 改动区域 | 最低追加要求 |
+| --- | --- |
+| Tracking 生命周期 | 根据改动覆盖 session 启动、切换、封口、恢复或 AFK 行为 |
+| SQLite schema 或 migration | 覆盖升级、数据保留、默认值和旧数据库 |
+| 备份或恢复 | 覆盖预览、兼容性、数据保留和 runtime 刷新 |
+| 设置 | 覆盖持久化归一化、保存行为和 runtime 同步 |
+| UI 交互 | 覆盖主要交互状态和相关浏览器 smoke 行为 |
+| 本机或网络接口 | 覆盖鉴权、凭据轮换、关闭服务、已连接客户端、连接中客户端、绑定失败和初始同步 |
+
+已有测试通过不能代替新增风险的对应覆盖。
+
+### 7. 提交 Pull Request
+
+#### 7.1 Pull Request 标题
+
+使用简洁、能够描述结果的标题：
+
+```text
+feat: add optional local WebSocket status API
+fix: seal active sessions after resume
+docs: document contribution and PR workflow
+```
+
+#### 7.2 Pull Request 正文
+
+使用[真实 PR 模板](.github/pull_request_template.md)，必需表单只在该处维护。
+说明问题与已接受范围、真实 owner、变化的风险及失败恢复行为；填写适用的 UI
+证据和验证字段，再完成 Contributor Checklist。未受影响的领域使用有理由的
+`N/A`。正文先解释行为与风险，再补充必要实现细节。
+
+#### 7.3 引用 issue，但不要自动关闭
+
+请使用：
+
+```text
+Refs #4
+```
+
+不要使用：
+
+```text
+Closes #4
+Fixes #4
+Resolves #4
+```
+
+issue 状态变化属于维护者的显式操作。除非维护者明确要求，否则 Pull Request
+不应关闭、重新打开、添加标签或以其他方式修改 issue 状态。
+
+#### 7.4 UI 改动需要仓库外截图
+
+对于可见的 UI 改动，请提供能够展示以下内容的截图：
+
+- 相关页面；
+- 适用时的重要 empty、disabled 或 error 状态；
+- 视觉角色变化时的浅色和深色主题；
+- 改动影响响应式行为时的窄布局。
+
+这些截图必须通过 GitHub `user-attachments` 或其他仓库外 HTTPS 地址提供。不要把
+审查截图、GIF、视频或证据媒体目录提交进仓库。指向本仓库 blob/raw 文件的 URL
+仍属于仓库内证据，不能通过准入门禁。产品真实使用的图标和 feature assets 继续由
+对应代码 owner 管理，不属于审查证据。
+
+同时列出受影响的视觉/交互状态、键盘或焦点行为（未受影响时可写带原因的 `N/A`），
+以及保护该改动的可重复命令或现有 owner test。截图本身不能证明交互行为正确。
+
+### 8. Review 或合并前进行 rebase
+
+#### 8.1 rebase 是什么
+
+rebase 会把你的分支 commit 重新接到最新 `main` 后面：
+
+```text
+Before:
+
+main:       A---B---C
+                 \
+feature:          D---E
+
+After:
+
+main:       A---B---C
+                     \
+feature:              D'---E'
+```
+
+这样可以让 Pull Request 基于当前代码，并在合并前暴露冲突。
+
+#### 8.2 什么时候需要 rebase
+
+遇到以下情况时，请执行 rebase：
+
+- GitHub 提示存在合并冲突；
+- `main` 修改了相同文件；
+- 维护者要求更新分支；
+- 正在准备最终合并版本。
+
+#### 8.3 rebase 命令
+
+对于直接推送到本仓库的分支：
+
+```bash
+git status
+git fetch origin main
+git rebase origin/main
+```
+
+仔细解决冲突，然后继续：
+
+```bash
+git add path/to/resolved-file
+git rebase --continue
+```
+
+完成 rebase 后：
+
+```bash
+git push --force-with-lease
+```
+
+请使用 `--force-with-lease`，不要使用 `--force`。它会拒绝覆盖意外出现的远端改动。
+
+如果需要放弃本次 rebase：
+
+```bash
+git rebase --abort
+```
+
+如果你通过 fork 贡献，请把 `origin/main` 替换为 `upstream/main`，
+然后把 rebase 后的分支推送到自己的 fork。
+
+#### 8.4 按行为解决冲突
+
+不要机械地选择某一侧冲突内容。
+
+解决冲突时：
+
+1. 理解 `main` 发生了什么变化。
+2. 保留 `main` 中更新的正确性修复和架构方向。
+3. 只重新应用 Pull Request 真正需要的 feature 私有行为。
+4. 删除已经被 `main` 取代的无关修改。
+5. 按[工程质量](docs/engineering-quality.md#5-默认验证门槛) 重新评估验证证据，
+   重跑证据已失效的检查，并确保有效证据仍覆盖本次改动的全部所需门槛。
+
+如果冲突涉及 tracking 语义、SQLite migration、备份或恢复行为，
+或你并不完全理解的边界，请寻求帮助。
+
+### 9. Review 流程
+
+Review 不只是样式检查。它的主要目的是保护可信的 tracking 行为、本地数据、
+清晰职责和长期可维护性。
+
+#### 9.1 Review 顺序
+
+Review 时应按以下顺序检查：
+
+1. 改动是否解决了所描述的问题？
+2. 改动是否符合当前产品范围？
+3. diff 中是否包含无关修改？
+4. 代码是否放在正确的 owner 下？
+5. 是否可能影响 tracking 正确性、本地数据、隐私或安全？
+6. 失败状态是否可见、可恢复？
+7. 测试是否覆盖了新增风险？
+8. 分支是否与最新 `main` 冲突？
+9. 剩余样式或命名改进是否值得阻塞合并？
+
+#### 9.2 必须在合并前解决的问题
+
+以下问题必须在合并前解决：
+
+- 可能导致数据丢失或损坏；
+- tracking、session 切换或恢复行为错误；
+- 鉴权、隐私或凭据撤销缺口；
+- 服务已经关闭或连接已经撤销，但数据仍然继续暴露；
+- 不安全的备份、恢复、清理或 migration 行为；
+- 构建失败或必需验证失败；
+- 与 `main` 存在冲突；
+- 无关改动遮蔽了真实 diff；
+- 职责放错层级，并且合并后会制造新的长期边界问题。
+
+#### 9.3 后续 issue
+
+当已接受的实现正确、安全时，小型非阻塞改进可以在合并后处理。例如：
+
+- 文案微调；
+- 小型命名优化；
+- 小型可读性重构；
+- 可选诊断能力；
+- 超出风险主路径的额外锦上添花测试。
+
+不要把正确性、数据安全、隐私、安全或必需边界修复延后处理。
+
+#### 9.4 响应 review 意见
+
+更新 Pull Request 时：
+
+1. 如果需要澄清预期行为，请简短回复。
+2. 按要求推送聚焦的后续 commit 或执行 rebase。
+3. 说明重新运行了哪些验证命令。
+4. 只有底层问题真正解决后，才标记 conversation 为 resolved。
+
+### 10. 合并规则
+
+这是一个个人仓库。维护者可以把确认过的内部改动直接推送到 `origin/main`。
+贡献者的 Pull Request 应保持聚焦，并在阻塞性 review 意见解决后再合并。
+
+合并 Pull Request 前：
+
+1. 确认分支基于最新 `main`。
+2. 确认所需验证已通过。
+3. 确认阻塞性 review findings 已解决。
+4. 确认最终 diff 只包含预期范围。
+5. 确认 issue 引用使用 `Refs #N`，除非明确要求执行关闭操作。
+6. 如果改动属于下一次发布摘要范围，确认 changelog 或 release notes 已更新。
+
+除非存在明确协作需要，不要为维护者自己处理的后续工作额外创建分支或 Pull Request。
+
+### 11. 贡献者快速检查清单
+
+请求 review 前：
+
+- [ ] 我阅读了相关的有效项目文档。
+- [ ] 我搜索了现有 issue 和 Pull Request，确认没有相关或范围重叠的工作。
+- [ ] 我的分支从近期 `main` 创建。
+- [ ] Pull Request 关联了已接受的 issue、Project item，或维护者明确确认的 scope。
+- [ ] Pull Request 只解决一个完整、连贯的问题。
+- [ ] 每个改动文件都是解决该已接受问题所必需。
+- [ ] commit 保持可审查；超大变更已经按逻辑拆分。
+- [ ] 我删除了无关重构和格式化噪音。
+- [ ] 我把新增行为放在正确的 owner 下。
+- [ ] 我没有在设计系统之外新增独立 CSS 或硬编码视觉样式。
+- [ ] 除非维护者明确要求，我没有修改质量门禁脚本、CI workflow、bundle budget 或 hotspot budget。
+- [ ] 用户可见文案由对应 copy domain 管理，没有写成 JSX 内联字面量。
+- [ ] 我为承担风险的行为补充了匹配风险域的专项测试。
+- [ ] 我已按[第 6 节](#6-验证要求) 运行本次改动所需的验证。
+- [ ] 对于可见 UI 改动，我在仓库外提供了截图，且没有提交审查媒体。
+- [ ] 对于本机或网络接口，我说明了安全行为。
+- [ ] 我使用 `Refs #N`，没有使用 issue 自动关闭关键词。
+- [ ] 如果 `main` 已变化或 GitHub 提示冲突，我执行了 rebase。
+
+### 12. 维护者 Review 快速检查清单
+
+合并前：
+
+- [ ] 改动符合当前产品范围。
+- [ ] diff 有清楚的 owner，不包含无关修改。
+- [ ] 优先检查了 tracking、数据安全、隐私和安全风险。
+- [ ] 失败状态可见、可恢复。
+- [ ] 新增风险有专项测试覆盖。
+- [ ] 必需验证已通过。
+- [ ] 分支与最新 `main` 兼容。
+- [ ] 阻塞性问题已经在合并前修复。
+- [ ] 后续工作只包含非阻塞改进。
+- [ ] issue 状态变化仍然是显式操作。
